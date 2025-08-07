@@ -13,7 +13,7 @@ app = FastAPI()
 class TranslateRequest(BaseModel):
     sentence: str
 
-@app.post("/gpt/translate")
+@app.post("/")
 def translate(request:TranslateRequest):
 
     data_schema = {

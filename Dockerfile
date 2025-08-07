@@ -9,6 +9,6 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY gpt/ ./gpt
 COPY ./.env .
 
-CMD ["uvicorn", "gpt.translate:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "gpt.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 
