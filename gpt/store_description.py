@@ -32,7 +32,7 @@ def get_store_description(request : StoreDescriptionRequest):
                 "description" : "여러 줄 설명"
             }
         },
-        "required": ["short_description", "long_description", "english"]
+        "required": ["short_description", "long_description"]
     }
 
     response = client.chat.completions.create(
@@ -62,5 +62,4 @@ def get_store_description(request : StoreDescriptionRequest):
     )
 
     result = json.loads(response.choices[0].message.function_call.arguments)
-    print(result)
     return result
