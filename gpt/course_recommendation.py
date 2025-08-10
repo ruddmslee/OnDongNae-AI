@@ -40,12 +40,15 @@ else:  # 파일 존재 X - 인덱스 생성
     faiss_index = faiss.IndexFlatL2(1536)
 
 # metadata 불러오기
+metadata: List[Dict[str, Any]] = []
 if os.path.exists(metadata_path):
-    metadata_path.read_text(encoding="utf-8")
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        metadata = json.load(f)
 else: metadata = []
 
 # -------- 응답 처리 --------
 class CourseStore(BaseModel):
+    id: int
     name: str
     order: int
 
@@ -69,6 +72,7 @@ def error(msg:str):
 # -------- 가게 임베딩 --------
 
 class StoreAddRequest(BaseModel):
+    id: int
     name : str
     description : str
     market : str
@@ -122,13 +126,17 @@ def course_recommend(request:CourseRecommendationRequest):
     if ntotal < 3:
         return error("ntotal이 3 이하입니다.")
     
-    store_list = ""
+    store_list = []
     #상위 6개 가게 추출
     k = min(6, ntotal)
     distances, indices = faiss_index.search(query_embedding, k)
     retrieved_stores = [metadata[i] for i in indices[0]]
     for i, store in enumerate(retrieved_stores):
-        store_list += f"#{i+1} : {store['name']} - {store['description']} \n"
+        store_list.append({"id": store["id"],
+                            "name": store["name"],
+                            "description" : store["description"]})
+        
+    store_list_json = json.dumps(store_list, ensure_ascii=False)
 
     # 응답 생성 요청
     data_schema = {
@@ -152,6 +160,10 @@ def course_recommend(request:CourseRecommendationRequest):
                 "items" : {
                     "type" : "object",
                     "properties" : {
+                        "id" : {
+                            "type" : "integer",
+                            "description" : "가게 id"
+                        },
                         "name" : {
                             "type" : "string",
                             "description" : "가게 이름"
@@ -161,15 +173,15 @@ def course_recommend(request:CourseRecommendationRequest):
                             "description" : "코스 내 순서"
                         }
                     },
-                    "required" : ["name", "order"]
+                    "required" : ["id", "name", "order"]
                 }
             }
         },
         "required": ["course_title", "course_long_description", "course_short_description", "course_store"]
     }
     
-    user_prompt = f""" 가게 리스트: {store_list}
-                        질문 : "가게 리스트 중 가게 3가지를 골라 코스를 만들어줘.
+    user_prompt = f""" 가게 리스트: {store_list_json}
+                        질문 : "가게 리스트 중 가게 3가지를 골라 코스를 만들어줘. (id는 반드시 후보의 id만 사용)
                         1. 분위기가 {request.atmosphere_option} 하고, 
                         {request.with_option}과 함께 가기 좋은 가게 위주로 골라줘.
                         2. 최적의 경로로 코스 내 방문 '순서'를 정해줘.
