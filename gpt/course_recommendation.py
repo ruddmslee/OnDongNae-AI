@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 import os, json
 from dotenv import load_dotenv
 import numpy as np
 import faiss
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 
 load_dotenv()
 key = os.getenv("OPENAI_API_KEY")
@@ -44,6 +44,26 @@ if os.path.exists(metadata_path):
     metadata_path.read_text(encoding="utf-8")
 else: metadata = []
 
+# -------- 응답 처리 --------
+class CourseStore(BaseModel):
+    name: str
+    order: int
+
+class CourseRecommendationResponse(BaseModel):
+    course_title: str
+    course_long_description: str
+    course_short_description: str
+    course_store: List[CourseStore]
+
+class ApiResponse(BaseModel):
+    success : bool
+    data: Optional[CourseRecommendationResponse] = None
+    error: Optional[str] = None
+
+def ok(data: CourseRecommendationResponse):
+    return ApiResponse(success=True, data=data)
+def error(msg:str):
+    return ApiResponse(success=False, error=msg)
 
 
 # -------- 가게 임베딩 --------
@@ -78,7 +98,6 @@ def add_store(request : StoreAddRequest):
     return { "count" : len(metadata) }
 
 
-
 # -------- 코스 추천 --------
 
 class CourseRecommendationRequest(BaseModel):
@@ -99,21 +118,9 @@ def course_recommend(request:CourseRecommendationRequest):
     # 오류 반환
     ntotal = getattr(faiss_index, "ntotal", 0)
     if ntotal != len(metadata):
-        return {
-            "coures_title" : "",
-            "course_long_description" : "",
-            "course_short_description" : "",
-            "course_store":[],
-            "error": "metadata 개수와 ntotal이 일치하지 않습니다."
-        }
+        return error("metadata 개수와 ntotal이 일치하지 않습니다.")
     if ntotal < 3:
-        return {
-            "coures_title" : "",
-            "course_long_description" : "",
-            "course_short_description" : "",
-            "course_store":[],
-            "error": "ntotal이 3 이하입니다."
-        }
+        return error("ntotal이 3 이하입니다.")
     
     store_list = ""
     #상위 6개 가게 추출
@@ -190,4 +197,10 @@ def course_recommend(request:CourseRecommendationRequest):
     )
 
     result = json.loads(response.choices[0].message.function_call.arguments)
-    return result
+
+    try :
+        data = CourseRecommendationResponse(** result)
+    except ValidationError as e:
+        return error("응답 형식 검증에 실패했습니다.")
+    
+    return ok(data)
