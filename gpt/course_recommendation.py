@@ -30,6 +30,9 @@ def get_embedding(text, model="text-embedding-3-small"):
     response =  client.embeddings.create(input = [text], model=model).data[0].embedding
     return np.array(response).astype(np.float32)
 
+def get_normalized_embedding(text):
+    vec = get_embedding(text)
+    return vec / (np.linalg.norm(vec) + 1e-12)
 
 # faiss_index 불러오기
 if os.path.exists(index_path):  # 파일 존재 O
@@ -37,12 +40,12 @@ if os.path.exists(index_path):  # 파일 존재 O
     if faiss_index.d != 1536:
         raise RuntimeError("faiss_index의 차원이 1536이 아닙니다.")
 else:  # 파일 존재 X - 인덱스 생성
-    faiss_index = faiss.IndexFlatL2(1536)
+    faiss_index = faiss.IndexFlatIP(1536)
 
 # metadata 불러오기
 metadata: List[Dict[str, Any]] = []
 if os.path.exists(metadata_path):
-    with open(metadata_path, "w", encoding="utf-8") as f:
+    with open(metadata_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)
 else: metadata = []
 
@@ -93,7 +96,7 @@ def doc_text(store: Dict[str, Any]):
 @app.post("/add-store")
 def add_store(request : StoreAddRequest):
     text = doc_text(request.model_dump())
-    vector = get_embedding(text).reshape(1,-1)
+    vector = get_normalized_embedding(text).reshape(1,-1)
     faiss_index.add(vector)
     metadata.append(request.model_dump())
     faiss.write_index(faiss_index, index_path)
@@ -117,7 +120,7 @@ def course_recommend(request:CourseRecommendationRequest):
     query = f"""{request.market_name} 안에 있는 가게들 중 분위기가 {request.atmosphere_option} 하고, 
                     {request.with_option}과 함께 가기 좋은 가게 위주로 6개 골라줘"""
     
-    query_embedding = get_embedding(query).reshape(1,-1)
+    query_embedding = get_normalized_embedding(query).reshape(1,-1)
 
     # 오류 반환
     ntotal = getattr(faiss_index, "ntotal", 0)
