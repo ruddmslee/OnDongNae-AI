@@ -10,6 +10,17 @@ key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=key)
 app = FastAPI()
 
+system_prompt = """
+You are a localization assistant that translates Korean to Japanese, Chinese (Simplified), and English.
+
+Rules:
+1. Do not literally translate Korean dish names or proper nouns. Use Revised Romanization for Korean food / proper nouns by default (e.g., 냉면 -> Naengmyeon)
+2. When unsure, prefer romanization over a guessed literal meaning.
+3. Translate standard business terms into the target language. (e.g., 상회 -> store, 약국 -> pharmacy)
+4. Your responses will be returned through the tool/function 'translate_text' with the schema {japanese, chinese, english}.
+
+"""
+
 class TranslateRequest(BaseModel):
     sentence: str
 
@@ -21,15 +32,15 @@ def translate(request:TranslateRequest):
         "properties": {
             "japanese": {
                 "type" : "string",
-                "description" : "일본어 번역"
+                "description" : "translate into japanese"
             },
             "chinese": {
                 "type" : "string",
-                "description" : "중국어 번역"
+                "description" : "translate into chinese"
             },
             "english": {
                 "type" : "string",
-                "description" : "영어 번역"
+                "description" : "translate into english"
             }
         },
         "required": ["japanese", "chinese", "english"]
@@ -37,16 +48,21 @@ def translate(request:TranslateRequest):
 
     response = client.chat.completions.create(
         model = "gpt-4o-mini",
+        temperature=0,
         messages = [
             {
+                "role" : "system",
+                "content" : system_prompt
+            },
+            {
                 "role" : "user",
-                "content" : f""" "{request.sentence}"를 일본어, 영어, 중국어로 번역해줘."""
+                "content" : f" Translate this into JA, EN, ZH-HANS: {request.sentence}"
             }
         ],
         functions = [
             {
                 "name" : "translate_text",
-                "description": "문장을 일본어, 영어, 중국어로 번역",
+                "description": "translate sentence into japanese, chinese, english",
                 "parameters": data_schema
             }
         ],
