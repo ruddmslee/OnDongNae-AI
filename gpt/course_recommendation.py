@@ -151,7 +151,7 @@ def course_recommend(request:CourseRecommendationRequest):
             },
             "course_long_description": {
                 "type" : "string",
-                "description" : "코스 여러 줄 설명"
+                "description" : "코스 세 줄 설명"
             },
             "course_short_description": {
                 "type" : "string",
@@ -189,7 +189,7 @@ def course_recommend(request:CourseRecommendationRequest):
                         {request.with_option}과 함께 가기 좋은 가게 위주로 골라줘.
                         2. 최적의 경로로 코스 내 방문 '순서'를 정해줘.
                         3. 카테고리가 되도록이면 겹치지 않게 코스를 만들어줘.
-                        4. '코스의 제목', '코스 한 줄 설명', '코스 여러 줄 설명'을 작성해줘. 설명을 덧붙여서 자연스럽게 작성해줘.
+                        4. '코스의 제목', '코스 한 줄 설명', '코스 세 줄 설명'을 작성해줘. 설명을 덧붙여서 자연스럽게 작성해줘.
                         5. 되도록이면 매번 다양한 구성으로 코스를 만들어줘"
                     """
 

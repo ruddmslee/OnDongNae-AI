@@ -29,7 +29,7 @@ def get_store_description(request : StoreDescriptionRequest):
             },
             "long_description": {
                 "type" : "string",
-                "description" : "여러 줄 설명"
+                "description" : "세 줄 설명"
             }
         },
         "required": ["short_description", "long_description"]
@@ -48,7 +48,7 @@ def get_store_description(request : StoreDescriptionRequest):
                         "가게 세부 업종" : {request.subCategory},
                         "사장님이 생각하는 가게의 장점" : {request.strength},
                         "사장님이 추천하고 싶은 가게의 특징" : {request.recommendation}
-                    }} 이 데이터를 바탕으로 가게에 대한 한 줄 설명, 여러 줄 설명을 생성해줘. 조금 더 설명을 덧붙여줘."""
+                    }} 이 데이터를 바탕으로 가게에 대한 한 줄 설명, 여러 줄 설명을 생성해줘. 조금 더 설명을 덧붙여줘. 거짓말은 하지 말아줘."""
             }
         ],
         functions = [
