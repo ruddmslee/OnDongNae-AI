@@ -25,11 +25,11 @@ def get_store_description(request : StoreDescriptionRequest):
         "properties": {
             "short_description": {
                 "type" : "string",
-                "description" : "한 줄 설명"
+                "description" : "course description in one line"
             },
             "long_description": {
                 "type" : "string",
-                "description" : "세 줄 설명"
+                "description" : "course description about three lines long"
             }
         },
         "required": ["short_description", "long_description"]
@@ -42,19 +42,20 @@ def get_store_description(request : StoreDescriptionRequest):
                 "role" : "user",
                 "content" : f""" 
                     "{{
-                        "가게 이름" : {request.name},
-                        "가게 주소" : {request.address},
-                        "가게 업종" : {request.mainCategory},
-                        "가게 세부 업종" : {request.subCategory},
-                        "사장님이 생각하는 가게의 장점" : {request.strength},
-                        "사장님이 추천하고 싶은 가게의 특징" : {request.recommendation}
-                    }} 이 데이터를 바탕으로 가게에 대한 한 줄 설명, 여러 줄 설명을 생성해줘. 조금 더 설명을 덧붙여줘. 거짓말은 하지 말아줘."""
+                        "store name" : {request.name},
+                        "store address" : {request.address},
+                        "store main category" : {request.mainCategory},
+                        "store sub categories" : {request.subCategory},
+                        "store strengths (what the owner thinks)" : {request.strength},
+                        "special features recommended by the owner" : {request.recommendation}
+                    }}" Based on this data, generate a one-line and three-lines description of the store in Korean.
+                      Add a bit more explanation, but do not make up any false information.   """
             }
         ],
         functions = [
             {
                 "name" : "get_store_description",
-                "description": "가게 설명 불러오기",
+                "description": "Retrieve store descriptions",
                 "parameters": data_schema
             }
         ],

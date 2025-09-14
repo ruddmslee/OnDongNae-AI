@@ -117,8 +117,8 @@ class CourseRecommendationRequest(BaseModel):
 def course_recommend(request:CourseRecommendationRequest):
 
     # 쿼리 정의 및 임베딩
-    query = f"""{request.market_name} 안에 있는 가게들 중 분위기가 {request.atmosphere_option} 하고, 
-                    {request.with_option}과 함께 가기 좋은 가게 위주로 6개 골라줘"""
+    query = f"""Select 6 stores located in {request.market_name} that have a {request.atmosphere_option} atmosphere
+                    and are good to visit with {request.with_option}"""
     
     query_embedding = get_normalized_embedding(query).reshape(1,-1)
 
@@ -147,33 +147,33 @@ def course_recommend(request:CourseRecommendationRequest):
         "properties": {
             "course_title": {
                 "type" : "string",
-                "description" : "코스 제목"
+                "description" : "course title"
             },
             "course_long_description": {
                 "type" : "string",
-                "description" : "코스 세 줄 설명"
+                "description" : "course description about three lines long"
             },
             "course_short_description": {
                 "type" : "string",
-                "description" : "코스 한 줄 설명"
+                "description" : "course description in one line"
             },
             "course_store": {
                 "type" : "array",
-                "description" : "코스에 들어갈 가게 3가지",
+                "description" : "3 stores to include in the course",
                 "items" : {
                     "type" : "object",
                     "properties" : {
                         "id" : {
                             "type" : "integer",
-                            "description" : "가게 id"
+                            "description" : "store id"
                         },
                         "name" : {
                             "type" : "string",
-                            "description" : "가게 이름"
+                            "description" : "store name"
                         }, 
                         "order" : {
                             "type" : "integer",
-                            "description" : "코스 내 순서"
+                            "description" : "store order in the course"
                         }
                     },
                     "required" : ["id", "name", "order"]
@@ -183,14 +183,15 @@ def course_recommend(request:CourseRecommendationRequest):
         "required": ["course_title", "course_long_description", "course_short_description", "course_store"]
     }
     
-    user_prompt = f""" 가게 리스트: {store_list_json}
-                        질문 : "가게 리스트 중 가게 3가지를 골라 코스를 만들어줘. (id는 반드시 후보의 id만 사용)
-                        1. 분위기가 {request.atmosphere_option} 하고, 
-                        {request.with_option}과 함께 가기 좋은 가게 위주로 골라줘.
-                        2. 최적의 경로로 코스 내 방문 '순서'를 정해줘.
-                        3. 카테고리가 되도록이면 겹치지 않게 코스를 만들어줘.
-                        4. '코스의 제목', '코스 한 줄 설명', '코스 세 줄 설명'을 작성해줘. 설명을 덧붙여서 자연스럽게 작성해줘.
-                        5. 되도록이면 매번 다양한 구성으로 코스를 만들어줘"
+    user_prompt = f""" Store list: {store_list_json}
+                        Question : "From the given store list, select 3 stores to create a course. (Make sure to use only the candidate store IDs)
+                        1. Choose stores that have a "{request.atmosphere_option}" atmosphere and
+                        good to visit with {request.with_option}.
+                        2. Determine the visiting 'order' within the course to create the optional route.
+                        3. Try to select stores with different categories if possible.
+                        4. Provide 'course_title', 'course_short_description' (one line), and 'course_long_description' (about three lines) in Korean.
+                        Write the descriptions naturally with context.
+                        5. Try to make the composition of the course different each time you generate it.
                     """
 
     response = client.chat.completions.create(
@@ -204,7 +205,7 @@ def course_recommend(request:CourseRecommendationRequest):
         functions = [
             {
                 "name" : "get_course_recommendation",
-                "description": "코스 추천 불러오기",
+                "description": "Retrieve a course recommendation",
                 "parameters": data_schema
             }
         ],
