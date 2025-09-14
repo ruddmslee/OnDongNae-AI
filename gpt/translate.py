@@ -18,6 +18,7 @@ Rules:
 2. When unsure, prefer romanization over a guessed literal meaning.
 3. Translate standard business terms into the target language. (e.g., 상회 -> store, 약국 -> pharmacy)
 4. Your responses will be returned through the tool/function 'translate_text' with the schema {japanese, chinese, english}.
+5. Always start each translated sentence with a capital letter.
 
 """
 
